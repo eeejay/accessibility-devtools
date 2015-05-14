@@ -1,0 +1,15 @@
+{
+  "newcap": false,
+  "unused": "vars",
+  "browser": true,
+  "esnext": true,
+  "globals": {
+    "Components" : false,
+    "dump" : false,
+    "require" : false,
+    "exports" : false
+  },
+  "globalstrict": true,
+  "quotmark": true,
+  "undef": true
+}

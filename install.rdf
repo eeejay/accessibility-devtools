@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+
+  <Description about="urn:mozilla:install-manifest">
+    <em:id>accessibility-devtools@mozilla.org</em:id>
+    <em:name>accessibility-devtools</em:name>
+    <em:version>0.1</em:version>
+    <em:type>2</em:type>
+    <em:iconURL>chrome://accessibility-devtools/content/logo.png</em:iconURL>
+    <em:targetApplication>
+      <Description>
+       <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+       <em:minVersion>22.*</em:minVersion>
+       <em:maxVersion>30.0</em:maxVersion>
+     </Description>
+    </em:targetApplication>
+    <em:unpack>true</em:unpack>
+    <em:bootstrap>true</em:bootstrap>
+    <em:creator>Eitan Isaacson</em:creator>
+    <em:description>Accessibility developer tools</em:description>
+    <em:homepageURL>http://log.monotonous.org</em:homepageURL>
+  </Description>
+</RDF>
