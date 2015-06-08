@@ -17,7 +17,7 @@ const gAccRetrieval = Cc["@mozilla.org/accessibleRetrieval;1"].
   getService(Ci.nsIAccessibleRetrieval);
 
 function debug() {
-  dump("dev-a11y-actor.js: " + Array.prototype.join.call(arguments, " ") + "\n");
+  dump("accessibility-tree.js: " + Array.prototype.join.call(arguments, " ") + "\n");
 }
 
 types.addActorType("accessible");
@@ -38,6 +38,11 @@ types.addDictType("accessibleEventData", {
 types.addDictType("accessibleRootAndDoc", {
   root: "accessible",
   document: "accessible"
+});
+
+types.addDictType("accessibleAttribute", {
+  key: "string",
+  value: "string"
 });
 
 let AccessibleRootActor = ActorClass({
@@ -161,6 +166,42 @@ let AccessibleActor = ActorClass({
   }, {
     response: RetVal("json")
   }),
+
+  getState: method(function() {
+    let state = {};
+    let extState = {};
+    this.rawAcc.getState(state, extState);
+    let stateStrings = gAccRetrieval.getStringStates(
+      state.value, extState.value);
+    let statesArray = new Array(stateStrings.length);
+    for (let i = 0; i < statesArray.length; i++) {
+      statesArray[i] = stateStrings.item(i);
+    }
+
+    return statesArray;
+  }, {
+    response: RetVal("array:string")
+  }),
+
+  getAttributes: method(function() {
+    let attributes = [];
+
+    if (this.rawAcc.attributes) {
+      let attributesEnum = this.rawAcc.attributes.enumerate();
+
+      // Populate |attributes| object with |aAccessible|'s attribute key-value
+      // pairs.
+      while (attributesEnum.hasMoreElements()) {
+        let attribute = attributesEnum.getNext().QueryInterface(
+          Ci.nsIPropertyElement);
+        attributes.push({ key: attribute.key, value: attribute.value });
+      }
+    }
+
+    return attributes;
+  }, {
+    response: RetVal("array:accessibleAttribute")
+  })
 });
 
 exports.AccessibleFront = FrontClass(AccessibleActor, {
@@ -274,7 +315,7 @@ let AccessibleWalkerActor = exports.AccessibleWalkerActor = ActorClass({
       case Ci.nsIAccessibleEvent.EVENT_HIDE:
       {
         try {
-          this.purgeSubtree(event.accessible.rawA);
+          this.purgeSubtree(event.accessible);
         } catch (x) {
           debug(x);
         }

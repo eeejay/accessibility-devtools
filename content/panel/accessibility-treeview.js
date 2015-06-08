@@ -2,19 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* global Components, dump */
+/* global dump */
 
 "use strict";
 
-!function() {
-
-const Cu = Components.utils;
-Cu.import("resource:///modules/devtools/gDevTools.jsm");
+const { Cu } = require("chrome");
 const { Promise: promise } = Cu.import("resource://gre/modules/Promise.jsm", {});
 const { Rect } = Cu.import("resource://gre/modules/Geometry.jsm");
+const events = require("sdk/event/core");
+const { Class } = require("sdk/core/heritage");
+const { EventTarget } = require("sdk/event/target");
 
 function debug() {
-  dump("accessibility-devtools.js: " + Array.prototype.join.call(arguments, " ") + "\n");
+  dump("accessibility-treeview.js: " + Array.prototype.join.call(arguments, " ") + "\n");
 }
 
 /*
@@ -23,42 +23,50 @@ function debug() {
  * to get an "accessible" from a "node", use the accessible property.
  * To get the "node" of an "accessible", look it up in the _nodes map
  */
-function AccessibleView(aWalker, aTrunk, aToolbox) {
-  this.walker = aWalker;
-  this.trunk = aTrunk;
-  this.toolbox = aToolbox;
-  this.trunk.addEventListener("click", this, true);
-  this.trunk.addEventListener("dblclick", this, true);
-  this.trunk.addEventListener("mousedown", this, true);
-  this.trunk.addEventListener("mousemove", this, true);
-  this.trunk.addEventListener("mouseenter", this, true);
-  this.trunk.addEventListener("mouseleave", this, true);
-  this.trunk.addEventListener("keydown", this, false);
-  this.toolbox.on("select", () => {
-    this.highlightRect(null);
-  });
+exports.AccessibleTreeView = Class({
+  extends: EventTarget,
 
-  this.doc = aTrunk.ownerDocument;
+  initialize: function(aWalker, aTrunk, aToolbox) {
+    this.walker = aWalker;
+    this.trunk = aTrunk;
+    this.toolbox = aToolbox;
+    this.trunk.addEventListener("click", this, true);
+    this.trunk.addEventListener("dblclick", this, true);
+    this.trunk.addEventListener("mousedown", this, true);
+    this.trunk.addEventListener("mousemove", this, true);
+    this.trunk.addEventListener("mouseenter", this, true);
+    this.trunk.addEventListener("mouseleave", this, true);
+    this.trunk.addEventListener("keydown", this, false);
+    this.toolbox.on("select", () => {
+      this.highlightRect(null);
+    });
 
-  this.walker.on("accessible-destroy", accessible => {
-    let node = AccessibleNode.getNodeForAccessible(accessible);
-    if (node) {
-      let parent = node.parent;
-      if (parent) {
-        parent.removeNode(node);
-      } else if (node.container.parentNode.id == "trunk") {
-        node.container.parentNode.removeChild(node.container);
+    this.doc = aTrunk.ownerDocument;
+
+    this.walker.on("accessible-destroy", accessible => {
+      let node = AccessibleNode.getNodeForAccessible(accessible);
+      debug('resetting selection?');
+      if (this.selected == node) {
+        debug('resetting selection');
+        this.selectNode(null);
       }
-    }
-  });
 
-  this.selected = null;
-  this.hovered = null;
-  this._highlighterDeferred = null;
-}
+      if (node) {
+        let parent = node.parent;
+        if (parent) {
+          parent.removeNode(node);
+        } else if (node.container.parentNode.id == "trunk") {
+          node.container.parentNode.removeChild(node.container);
+        }
+      }
+    });
 
-AccessibleView.prototype = {
-  init: function() {
+    this.selected = null;
+    this.hovered = null;
+    this._highlighterDeferred = null;
+  },
+
+  setup: function() {
     return this.walker.getRoot().then(root => {
       this.docNode = new AccessibleNode(root.docAccessible, this.doc);
       this.trunk.appendChild(this.docNode.container);
@@ -169,7 +177,12 @@ AccessibleView.prototype = {
     }
 
     this.selected = node;
-    this.selected.selected = true;
+    if (node) {
+      this.selected.selected = true;
+      events.emit(this, "selection-changed", this.selected.accessible);
+    } else {
+      events.emit(this, "selection-changed", null);
+    }
   },
 
   getHighlighter: function() {
@@ -289,7 +302,9 @@ AccessibleView.prototype = {
       });
     });
   }
-};
+
+
+});
 
 function AccessibleNode(accessible, doc) {
   this.accessible = accessible;
@@ -549,7 +564,7 @@ AccessibleNode.prototype = {
     name.textContent = this.accessible.name;
     div.appendChild(name);
 
-    if (this.accessible.domNodeType == Node.ELEMENT_NODE) {
+    if (this.accessible.domNodeType == doc.ELEMENT_NODE) {
       let domnode = doc.createElement("span");
       domnode.setAttribute("role", "presentation"); // TODO: Expose to a11y
       domnode.className = "open-inspector";
@@ -569,7 +584,7 @@ AccessibleNode.prototype = {
     elem.classList.remove("flash-out");
     elem.classList.add("theme-bg-contrast");
     elem.classList.add("theme-fg-contrast");
-    setTimeout(() => {
+    elem.ownerDocument.defaultView.setTimeout(() => {
       elem.classList.add("flash-out");
       elem.classList.remove("theme-bg-contrast");
       elem.classList.remove("theme-fg-contrast");
@@ -577,48 +592,3 @@ AccessibleNode.prototype = {
   },
 
 };
-
-function AccessibilityTool() {
-  this._viewDeferred = promise.defer();
-}
-
-AccessibilityTool.prototype = {
-  init: function(toolbox, accessibilityFront) {
-    this.toolbox = toolbox;
-    this.accessibilityFront = accessibilityFront;
-    this._treeFrame = document.createElement("iframe");
-    this._treeFrame.setAttribute("flex", "1");
-    this._treeFrame.addEventListener("load", this, true);
-    this._treeFrame.setAttribute(
-      "src", "chrome://accessibility-devtools/content/panel/tree-view.html");
-    document.getElementById("tree-box").appendChild(this._treeFrame);
-  },
-
-  handleEvent: function(evt) {
-    if (evt.type != "load") return;
-    this._treeFrame.removeEventListener("load", this);
-    let doc = evt.target;
-    this.toolbox.initInspector().then(() => {
-      this.accessibilityFront.getWalker(this.toolbox.walker).then(walker => {
-        let view = new AccessibleView(walker, doc.getElementById("trunk"), this.toolbox);
-        view.init().then(() => {
-          this._viewDeferred.resolve(view);
-        });
-      });
-    });
-  },
-
-  getView: function() {
-    return this._viewDeferred.promise;
-  },
-
-  getAccessibleForDomNode: function(domnode) {
-    this.getView().then(view => {
-      view.selectAccessibleForDomNode(domnode);
-    });
-  }
-};
-
-window.accessibilityTool = new AccessibilityTool();
-
-}(); // jshint ignore:line

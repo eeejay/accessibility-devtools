@@ -1,0 +1,45 @@
+body {
+  margin: 0;
+}
+
+.expander {
+  //box-sizing: border-box;
+}
+
+.expander:-moz-focusring {
+  //border: 1px dotted #999;
+}
+
+.ruleview-header {
+  font-size: inherit;
+  font-weight: normal;
+  margin: 0 0 0 0;
+  padding: 0;
+  border-top-width: 1px;
+  border-top-style: solid;
+}
+
+.ruleview-header > span {
+  display: inline-block;
+  vertical-align: middle
+}
+
+section.collapsed {
+  display: none;
+}
+
+.infolist:not(:empty) {
+  margin: 2px 0 2px 18px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+dd, dt {
+  display: inline-block;
+  width: 50%;
+  margin: 0;
+}

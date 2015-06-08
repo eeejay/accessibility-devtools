@@ -1,38 +1,4 @@
-#trunk {
-  height: 100%;
-  overflow: auto;
-  list-style: outside none none;
-}
-
-.role {
-  color: #76587A;
-  font-style: italic;
-}
-
-.name:not(:empty) {
-  margin-left: .5rem;
-}
-
-.theme-selected ~ .role,
-.theme-selected ~ .name {
-    color: var(--theme-selection-color);
-}
-
-.child.leaf .expander{
-  visibility: hidden;
-}
-
-.open-inspector {
-  background: transparent url("chrome://browser/skin/devtools/vview-open-inspector.png") no-repeat scroll 0px 0px;
-  padding-left: 16px;
-  margin-left: 5px;
-  cursor: pointer;
-}
-
-.open-inspector:hover {
-  background-position: -32px 0;
-}
-
-.open-inspector:active {
-  background-position: -16px 0;
+#accessible-sidebar {
+  min-width: 250px;
+  background-color: pink;
 }

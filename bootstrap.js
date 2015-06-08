@@ -57,10 +57,10 @@ function startup(data, reason) {
       tooltip: "Accessibility developer tools",
       inMenu: true,
       isTargetSupported: function(target) {
-        debug('wut?', target);
         return true;
       },
       build: function(iframeWindow, toolbox) {
+        iframeWindow.accessibilityPanel = new iframeWindow.AccessibilityPanel();
         toolbox.target.client.listTabs((response) => {
           let registryFront = ActorRegistryFront(toolbox.target.client, response);
           let options = {
@@ -77,14 +77,14 @@ function startup(data, reason) {
               toolbox.target.client.listTabs((r) => {
                 let tab = r.tabs[r.selected];
                 let accessiblityFront = AccessibilityToolFront(toolbox.target.client, tab);
-                iframeWindow.accessibilityTool.init(toolbox, accessiblityFront);
+                iframeWindow.accessibilityPanel.setup(toolbox, accessiblityFront);
               });
             }, e => {
               debug("ERROR: " + e);
             });
         });
         iframeWindow.wrappedJSObject.tab = toolbox.target.window;
-        return iframeWindow.accessibilityTool;
+        return iframeWindow.accessibilityPanel;
       }
     });
   } catch (e) {

@@ -16,16 +16,20 @@
   <script type="application/javascript;version=1.8"
           src="chrome://browser/content/devtools/theme-switching.js"/>
 
-  <script src="accessibility-devtools.js"></script>
+  <script src="accessibility-panel.js"></script>
 
   <box flex="1" class="devtools-responsive-container theme-body">
     <hbox flex="1">
       <vbox flex="1">
-        <toolbar class="devtools-toolbar">
-          <toolbarspacer flex="1"/>
-        </toolbar>
-        <vbox flex="1" id="tree-box">
-        </vbox>
+        <hbox flex="1">
+          <vbox flex="1" id="tree-box">
+            <toolbar class="devtools-toolbar">
+              <toolbarspacer flex="1"/>
+            </toolbar>
+          </vbox>
+          <splitter xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" class="devtools-side-splitter"/>
+          <vbox id="accessible-sidebar"></vbox>
+        </hbox>
       </vbox>
     </hbox>
   </box>
