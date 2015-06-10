@@ -45,9 +45,7 @@ exports.AccessibleTreeView = Class({
 
     this.walker.on("accessible-destroy", accessible => {
       let node = AccessibleNode.getNodeForAccessible(accessible);
-      debug('resetting selection?');
-      if (this.selected == node) {
-        debug('resetting selection');
+      if (this.selected && this.selected.isDescendent(node)) {
         this.selectNode(null);
       }
 
@@ -76,6 +74,7 @@ exports.AccessibleTreeView = Class({
         this.docNode = new AccessibleNode(docAcc, this.doc);
         this.trunk.appendChild(this.docNode.container);
         this._highlighterDeferred = null;
+        this.selectNode(null);
         this.docNode.flash();
       });
     });
@@ -437,6 +436,10 @@ AccessibleNode.prototype = {
 
   get hovered() {
     return this.container.querySelector(".tag-state").contains("theme-bg-darker");
+  },
+
+  isDescendent: function(node) {
+    return !!this.container.closest('#' + node.container.id);
   },
 
   scrollIntoView: function() {
