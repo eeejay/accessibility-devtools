@@ -59,6 +59,7 @@ let AccessibleRootActor = ActorClass({
     Actor.prototype.initialize.call(this, walker.conn);
     this.rawAcc = acc;
     this.walker = walker;
+    this.role = gAccRetrieval.getStringRole(this.rawAcc.role);
     this.docAccessible = walker.currentDocument;
     this.on("document-changed", (self, docAcc) => {
       this.docAccessible = docAcc;
@@ -71,7 +72,12 @@ let AccessibleRootActor = ActorClass({
       docAccessible: this.docAccessible.form(),
       walker: this.walker.form()
     };
-  }
+  },
+
+  toString: function() {
+    return "[AccessibleRootActor " + this.actorID + " for " + this.role + " | " + this.name + "]";
+  },
+
 });
 
 exports.AccessibleRootFront = FrontClass(AccessibleRootActor, {
@@ -361,7 +367,9 @@ let AccessibleWalkerActor = exports.AccessibleWalkerActor = ActorClass({
   get rootAccessible() {
     if (!this._rootAccessible) {
       let docAcc = gAccRetrieval.getAccessibleFor(this.tabActor.window.document);
-      this._rootAccessible = AccessibleRootActor(this, docAcc.parent);
+      let rootAcc = docAcc.parent;
+      this._rootAccessible = AccessibleRootActor(this, rootAcc);
+      this.refMap.set(rootAcc, this._rootAccessible);
     }
     return this._rootAccessible;
   },
