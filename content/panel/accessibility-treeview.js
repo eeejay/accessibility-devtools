@@ -196,11 +196,15 @@ exports.AccessibleTreeView = Class({
   getBody: function() {
     if (!this._bodyDeferred) {
       this._bodyDeferred = promise.defer();
-      this.walker.domWalker.getRootNode().then(root => {
-        this.walker.domWalker.querySelector(root, "body").then(body => {
-          this._bodyDeferred.resolve(body);
+      if (!this.walker.domWalker) {
+        this._bodyDeferred.resolve(null);
+      } else {
+        this.walker.domWalker.getRootNode().then(root => {
+          this.walker.domWalker.querySelector(root, "body").then(body => {
+            this._bodyDeferred.resolve(body);
+          });
         });
-      });
+      }
     }
 
     return this._bodyDeferred.promise;
@@ -209,6 +213,7 @@ exports.AccessibleTreeView = Class({
   highlightRect: function(node) {
     this.getHighlighter().then(highlighter => {
       this.getBody().then(body => {
+        if (!body) return;
         if (!node) {
           highlighter.show(body, {
             rect: {

@@ -25,7 +25,10 @@ const AccessibilityPanel = Class({
     this._treeViewDeferred = promise.defer();
   },
 
-  setup: function(toolbox, accessibilityFront) {
+  destroy: function() {
+  },
+
+  setup: function(toolbox, accessibilityFront, walkerFront) {
     this.toolbox = toolbox;
     this.accessibilityFront = accessibilityFront;
     this.initTreeView();
@@ -37,7 +40,6 @@ const AccessibilityPanel = Class({
     this._sidebarFrame.setAttribute("flex", "1");
     this._sidebarFrame.addEventListener("load", (evt) => {
       this.sidebar = new AccessibleSidebar(evt.target);
-      debug('loaded sidebar!', this.sidebar);
     }, true);
     this._sidebarFrame.setAttribute(
       "src", "chrome://accessibility-devtools/content/panel/sidebar.html");

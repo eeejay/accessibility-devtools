@@ -21,7 +21,7 @@ TIMESTAMP = ${shell date -u +"%Y%m%d%H%M"}
 SNAPSHOT = $(EXT_NAME)-snapshot-$(TIMESTAMP).xpi
 
 MOZRUNNER = mozrunner --pref=devtools.chrome.enabled:true --pref=devtools.debugger.remote-enabled:true \
-	-b $(FIREFOX_BINARY) -a $(CURDIR) --app-arg=$(URL)
+	-b $(FIREFOX_BINARY) -a $(CURDIR)/additional-extensions -a $(CURDIR) --app-arg=$(URL)
 
 $(XPI_FILE): $(SOURCES)
 	zip $@ $^
@@ -37,6 +37,9 @@ snapshot: $(XPI_FILE)
 
 run:
 	$(MOZRUNNER)
+
+run-webide:
+	$(MOZRUNNER) --app-arg=-webide
 
 run-no-e10s:
 	$(MOZRUNNER) --pref=browser.tabs.remote.autostart.2:false

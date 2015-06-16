@@ -8,42 +8,62 @@ const { Cc, Ci, Cu } = require("chrome");
 const {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
 
 let protocol = require("devtools/server/protocol");
-let events = require("sdk/event/core");
-
 let { Arg, method, RetVal, ActorClass, FrontClass, Front, Actor, types, preEvent } = protocol;
 let { Services } = Cu.import("resource://gre/modules/Services.jsm");
+let events = require("sdk/event/core");
+require("devtools/server/actors/inspector");
 
 const gAccRetrieval = Cc["@mozilla.org/accessibleRetrieval;1"].
   getService(Ci.nsIAccessibleRetrieval);
 
+var gConsole;
+
 function debug() {
-  dump("accessibility-tree.js: " + Array.prototype.join.call(arguments, " ") + "\n");
+  let args = Array.prototype.slice.call(arguments);
+  args.unshift("accessibility-actors.js:");
+  if (gConsole) {
+    gConsole.log.apply(gConsole, args);
+  } else {
+    dump(args.join(" ") + "\n");
+  }
 }
 
-types.addActorType("accessible");
+function typesRegistered() {
+  try {
+    types.getType("accessible");
+  } catch (x) {
+    return false;
+  }
 
-types.addDictType("disconnectedAccessible", {
-  // The actual node to return
-  accessible: "accessible",
+  return true;
+}
 
-  // lineage all the way to the root
-  path: "array:accessible"
-});
+if (!typesRegistered()) {
+  types.addActorType("accessible");
 
-types.addDictType("accessibleEventData", {
-  accessible: "accessible",
-  eventType: "string",
-});
+  types.addDictType("disconnectedAccessible", {
+    // The actual node to return
+    accessible: "accessible",
 
-types.addDictType("accessibleRootAndDoc", {
-  root: "accessible",
-  document: "accessible"
-});
+    // lineage all the way to the root
+    path: "array:accessible"
+  });
 
-types.addDictType("accessibleAttribute", {
-  key: "string",
-  value: "string"
-});
+  types.addDictType("accessibleEventData", {
+    accessible: "accessible",
+    eventType: "string",
+  });
+
+  types.addDictType("accessibleRootAndDoc", {
+    root: "accessible",
+    document: "accessible"
+  });
+
+  types.addDictType("accessibleAttribute", {
+    key: "string",
+    value: "string"
+  });
+}
 
 let AccessibleRootActor = ActorClass({
   typeName: "accessibleRoot",
@@ -170,7 +190,7 @@ let AccessibleActor = ActorClass({
        y: this.walker.rootWin.mozInnerScreenY }
     };
   }, {
-    response: RetVal("json")
+    response: { bounds: RetVal("json") }
   }),
 
   getState: method(function() {
@@ -186,7 +206,7 @@ let AccessibleActor = ActorClass({
 
     return statesArray;
   }, {
-    response: RetVal("array:string")
+    response: { states: RetVal("array:string") }
   }),
 
   getAttributes: method(function() {
@@ -206,7 +226,7 @@ let AccessibleActor = ActorClass({
 
     return attributes;
   }, {
-    response: RetVal("array:accessibleAttribute")
+    response: { attributes: RetVal("array:accessibleAttribute") }
   })
 });
 
@@ -294,7 +314,7 @@ let AccessibleWalkerActor = exports.AccessibleWalkerActor = ActorClass({
   form: function() {
     return {
       actor: this.actorID,
-      domWalker: this.domWalker.rootNode ? this.domWalker.form() : null
+      domWalker: (this.domWalker && this.domWalker.rootNode) ? this.domWalker.form() : null
     };
   },
 
@@ -421,5 +441,32 @@ exports.AccessibleWalkerFront = FrontClass(AccessibleWalkerActor, {
     this.actorID = form.actor;
     this.domWalker = form.domWalker ?
       types.getType("domwalker").read(form.domWalker, this) : null;
+  }
+});
+
+let AccessibilityToolActor = exports.AccessibilityToolActor = ActorClass({
+  typeName: "accessibilityTool",
+
+  initialize: function(conn, parent) {
+    gConsole = parent.window.console;
+    Actor.prototype.initialize.call(this, conn);
+
+    this.parent = parent;
+    this.state = "detached";
+  },
+
+  getWalker: method(function(domWalker) {
+    return AccessibleWalkerActor(this.conn, this.parent, domWalker);
+  }, {
+    request: { domWalker: Arg(0, "domwalker") },
+    response: { walker: RetVal("accessiblewalker") }
+  })
+});
+
+exports.AccessibilityToolFront = FrontClass(AccessibilityToolActor, {
+  initialize: function(client, form) {
+    Front.prototype.initialize.call(this, client, form);
+    this.actorID = form[AccessibilityToolActor.prototype.typeName];
+    this.manage(this);
   }
 });

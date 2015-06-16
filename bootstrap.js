@@ -11,11 +11,16 @@ const Cu = Components.utils;
 
 let { Services } = Cu.import("resource://gre/modules/Services.jsm");
 let { gDevTools } = Cu.import("resource:///modules/devtools/gDevTools.jsm");
+const {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
 
 const { devtools } = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
-const { ActorRegistryFront } = devtools.require("devtools/server/actors/actor-registry");
-devtools.require("devtools/server/actors/inspector");
+const require = devtools.require;
+const { ActorRegistryFront } = require("devtools/server/actors/actor-registry");
+const { InspectorFront } = require("devtools/server/actors/inspector");
+
+const ACTOR_SCRIPT = "resource://accessibility-devtools/actors/accessibility-actors.js";
 var gAccessibilityActorRegistrar;
+var gRegistryFront;
 
 function debug() {
   dump("accessibility-devtools bootstrap: " + Array.prototype.join.call(arguments, " ") + "\n");
@@ -41,8 +46,6 @@ function startup(data, reason) {
     popup.insertBefore(menuitem, popup.querySelector("menuseparator"));
   });
 
-  let { AccessibilityToolActor, AccessibilityToolFront } =
-    devtools.require("resource://accessibility-devtools/actors/accessibility-tool.js");
   // XXX This code is Firefox only and should not be loaded in b2g-desktop.
   try {
     // Register a new devtool panel with various OS controls
@@ -61,27 +64,12 @@ function startup(data, reason) {
       },
       build: function(iframeWindow, toolbox) {
         iframeWindow.accessibilityPanel = new iframeWindow.AccessibilityPanel();
-        toolbox.target.client.listTabs((response) => {
-          let registryFront = ActorRegistryFront(toolbox.target.client, response);
-          let options = {
-            prefix: AccessibilityToolActor.prototype.typeName,
-            constructor: "AccessibilityToolActor",
-            type: {
-              tab: true
-            }
-          };
-          registryFront
-            .registerActor("resource://accessibility-devtools/actors/accessibility-tool.js", options)
-            .then(actorRegistrar => {
-              gAccessibilityActorRegistrar = actorRegistrar;
-              toolbox.target.client.listTabs((r) => {
-                let tab = r.tabs[r.selected];
-                let accessiblityFront = AccessibilityToolFront(toolbox.target.client, tab);
-                iframeWindow.accessibilityPanel.setup(toolbox, accessiblityFront);
-              });
-            }, e => {
-              debug("ERROR: " + e);
-            });
+        let docElement = toolbox.frame.ownerDocument.documentElement;
+        let isWebIde = docElement.getAttribute("windowtype") == "devtools:webide";
+        getUrl(iframeWindow, toolbox.target).then(url => {
+          setupToolFront(toolbox.target, url, isWebIde).then(toolFront => {
+            iframeWindow.accessibilityPanel.setup(toolbox, toolFront);
+          });
         });
         iframeWindow.wrappedJSObject.tab = toolbox.target.window;
         return iframeWindow.accessibilityPanel;
@@ -106,3 +94,70 @@ function shutdown(data, reason) {
 function install(data, reason) {}
 
 function uninstall(data, reason) {}
+
+// actor setup functions
+
+function getTargetForm(target, rootActor, isWebIde) {
+  if (isWebIde) {
+    let { AppManager } = require("devtools/webide/app-manager");
+    let manifestURL = AppManager.getProjectManifestURL(AppManager.selectedProject);
+    let deferred = promise.defer();
+    let req = {
+      to: rootActor.webappsActor,
+      type: "getAppActor",
+      manifestURL: manifestURL
+    };
+    target.client.request(req, (appActor) => {
+      deferred.resolve(appActor.actor);
+    });
+    return deferred.promise;
+  } else {
+    return target.client.mainRoot.getTab().then(tab => tab.tab);
+  }
+}
+
+function setupToolFront(target, url, isWebIde) {
+  let { AccessibilityToolActor, AccessibilityToolFront } = require(ACTOR_SCRIPT);
+  let options = {
+    prefix: AccessibilityToolActor.prototype.typeName,
+    constructor: "AccessibilityToolActor",
+    type: {
+      tab: true
+    }
+  };
+  let deferred = promise.defer();
+
+  if (target.form[options.prefix]) {
+    deferred.resolve(AccessibilityToolFront(target.client, target.form));
+  } else {
+    target.client.listTabs(tabs => {
+      gRegistryFront = gRegistryFront || ActorRegistryFront(target.client, tabs);
+      gRegistryFront.registerActor(url, options).then(actorRegistrar => {
+        gAccessibilityActorRegistrar = actorRegistrar;
+        getTargetForm(target, tabs, isWebIde).then(result => {
+          deferred.resolve(AccessibilityToolFront(target.client, result));
+        });
+      }, e => {
+        throw new Error(e.message);
+      });
+    });
+  }
+
+  return deferred.promise;
+}
+
+function getUrl(win, target) {
+  let deferred = promise.defer();
+  if (target.isLocalTab) {
+    deferred.resolve(ACTOR_SCRIPT);
+  } else {
+    let xhr = new win.XMLHttpRequest();
+    xhr.onload = () => {
+      deferred.resolve("data:text/javascript;base64," + win.btoa(xhr.response));
+    };
+    xhr.open("get", ACTOR_SCRIPT, true);
+    xhr.send();
+  }
+
+  return deferred.promise;
+}
