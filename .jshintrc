@@ -6,7 +6,6 @@
   "globals": {
     "Components" : false,
     "dump" : false,
-    "require" : false,
     "exports" : false
   },
   "globalstrict": true,

@@ -16,7 +16,6 @@ const {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
 const { devtools } = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
 const require = devtools.require;
 const { ActorRegistryFront } = require("devtools/server/actors/actor-registry");
-const { InspectorFront } = require("devtools/server/actors/inspector");
 
 const ACTOR_SCRIPT = "resource://accessibility-devtools/actors/accessibility-actors.js";
 var gAccessibilityActorRegistrar;

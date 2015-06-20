@@ -1,6 +1,6 @@
 RDF = install.rdf
 CONTENT_SOURCES = $(shell find content/ -not -name \*~ -not -name \*.js)
-JS_SOURCES = $(shell find \! -path ./node_modules\* -name \*.js -not -name \*~)
+JS_SOURCES = $(shell find \! -path ./node_modules\* \! -path ./additional-extensions\* -name \*.js -not -name \*~)
 FIREFOX_BINARY?=$(shell which firefox)
 URL?=about:home
 

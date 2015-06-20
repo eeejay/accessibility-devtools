@@ -10,9 +10,7 @@
 const Cu = Components.utils;
 const { Promise: promise } = Cu.import("resource://gre/modules/Promise.jsm", {});
 const { devtools } = Cu.import("resource://gre/modules/devtools/Loader.jsm");
-const events = devtools.require("sdk/event/core");
 const { Class } = devtools.require("sdk/core/heritage");
-const { EventTarget } = devtools.require("sdk/event/target");
 const { AccessibleTreeView } = devtools.require("resource://accessibility-devtools/content/panel/accessibility-treeview.js");
 const { AccessibleSidebar } = devtools.require("resource://accessibility-devtools/content/panel/accessibility-sidebar.js");
 
