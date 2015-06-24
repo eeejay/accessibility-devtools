@@ -21,6 +21,9 @@ function debug() {
 const AccessibilityPanel = Class({
   initialize: function() {
     this._treeViewDeferred = promise.defer();
+    document.getElementById('track-vc').addEventListener('click', (e) => {
+      e.target.setAttribute('aria-pressed', e.target.classList.toggle('pressed'));
+    });
   },
 
   destroy: function() {

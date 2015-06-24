@@ -24,7 +24,7 @@
         <hbox flex="1">
           <vbox flex="1" id="tree-box">
             <toolbar class="devtools-toolbar">
-              <toolbarspacer flex="1"/>
+              <toolbarbutton id="track-vc" aria-pressed="false" class="devtools-toolbarbutton" tabindex="0" />
             </toolbar>
           </vbox>
           <splitter xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" class="devtools-side-splitter"/>

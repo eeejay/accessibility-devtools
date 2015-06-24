@@ -1,3 +1,39 @@
 #accessible-sidebar {
   min-width: 250px;
 }
+
+/* Expand/collapse panel toolbar button */
+
+#track-vc {
+  background: none;
+  box-shadow: none;
+  border: none;
+  list-style-image: url(chrome://browser/skin/devtools/debugger-toggleBreakpoints.png);
+  -moz-image-region: rect(0px,32px,16px,16px);
+}
+
+#track-vc > .toolbarbutton-icon {
+  width: 16px;
+  height: 16px;
+}
+
+#track-vc.pressed {
+  -moz-image-region: rect(0px,16px,16px,0px);
+}
+
+#track-vc:active {
+}
+
+@media (min-resolution: 1.25dppx) {
+  #track-vc {
+    list-style-image: url(chrome://browser/skin/devtools/debugger-toggleBreakpoints@2x.png);
+    -moz-image-region: rect(0px,64px,32px,32px);
+  }
+
+  #track-vc.pressed {
+    -moz-image-region: rect(0px,32px,32px,0px);
+  }
+
+  #track-vc:active {
+  }
+}
