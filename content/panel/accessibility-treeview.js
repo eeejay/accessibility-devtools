@@ -59,6 +59,12 @@ exports.AccessibleTreeView = Class({
       }
     });
 
+    this.walker.on("virtualcursor-changed", vcinfo => {
+      if (vcinfo.new) {
+        this.selectAccessible(vcinfo.new);
+      }
+    });
+
     this.selected = null;
     this.hovered = null;
     this._highlighterDeferred = null;
@@ -284,27 +290,29 @@ exports.AccessibleTreeView = Class({
     });
   },
 
-  selectAccessibleForDomNode: function(domnode) {
-    this.walker.getAccessibleForDomNode(domnode).then(accInfo => {
-      if (!accInfo) {
-        debug("got nothing");
+  selectAccessible: function(accInfo) {
+    if (!accInfo) {
+      debug("got nothing");
+      return;
+    }
+
+    if (accInfo.path[0] != this.docNode.accessible) {
+      debug("path does not start at document");
+      return;
+    }
+
+    this.docNode.expand(accInfo.path.slice(1)).then(() => {
+      let node = AccessibleNode.getNodeForAccessible(accInfo.accessible);
+      if (!node) {
+        debug("could not get right node");
         return;
       }
-
-      if (accInfo.path[0] != this.docNode.accessible) {
-        debug("path does not start at document");
-        return;
-      }
-
-      this.docNode.expand(accInfo.path.slice(1)).then(() => {
-        let node = AccessibleNode.getNodeForAccessible(accInfo.accessible);
-        if (!node) {
-          debug("could not get right node");
-          return;
-        }
-        this.selectNode(node);
-      });
+      this.selectNode(node);
     });
+  },
+
+  selectAccessibleForDomNode: function(domnode) {
+    this.walker.getAccessibleForDomNode(domnode).then(this.selectAccessible);
   }
 
 

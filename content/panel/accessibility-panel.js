@@ -21,9 +21,6 @@ function debug() {
 const AccessibilityPanel = Class({
   initialize: function() {
     this._treeViewDeferred = promise.defer();
-    document.getElementById('track-vc').addEventListener('click', (e) => {
-      e.target.setAttribute('aria-pressed', e.target.classList.toggle('pressed'));
-    });
   },
 
   destroy: function() {
@@ -54,6 +51,12 @@ const AccessibilityPanel = Class({
       let doc = evt.target;
       this.toolbox.initInspector().then(() => {
         this.accessibilityFront.getWalker(this.toolbox.walker).then(walker => {
+          document.getElementById('track-vc').addEventListener('click', (e) => {
+            let trackVirtualCursor = e.target.classList.toggle('pressed');
+            e.target.setAttribute('aria-pressed', trackVirtualCursor);
+            debug('click!', trackVirtualCursor);
+            walker.setTrackVirtualCursor(trackVirtualCursor);
+          });
           let treeview = new AccessibleTreeView(walker, doc.getElementById("trunk"), this.toolbox);
           treeview.on("selection-changed", (accessible) => {
             this.sidebar.displayAccessible(accessible);

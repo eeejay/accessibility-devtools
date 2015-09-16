@@ -65,6 +65,11 @@ if (!typesRegistered()) {
     key: "string",
     value: "string"
   });
+
+  types.addDictType("virtualcursorData", {
+    old: "nullable:disconnectedAccessible",
+    new: "nullable:disconnectedAccessible"
+  });
 }
 
 let AccessibleRootActor = ActorClass({
@@ -297,6 +302,11 @@ let AccessibleWalkerActor = exports.AccessibleWalkerActor = ActorClass({
     "accessible-destroy" : {
       type: "accessibleDestroy",
       eventType: Arg(0, "accessible")
+    },
+
+    "virtualcursor-changed" : {
+      type: "virtualcursorChanged",
+      eventType: Arg(0, "virtualcursorData")
     }
   },
 
@@ -325,7 +335,7 @@ let AccessibleWalkerActor = exports.AccessibleWalkerActor = ActorClass({
       return;
     }
     let event = aSubject.QueryInterface(Ci.nsIAccessibleEvent);
-    let accessible = this.refMap.get(event.accessible);
+    let accessible = this.ref(event.accessible, true);
 
     switch (event.eventType) {
       case Ci.nsIAccessibleEvent.EVENT_NAME_CHANGE:
@@ -340,6 +350,16 @@ let AccessibleWalkerActor = exports.AccessibleWalkerActor = ActorClass({
           events.emit(accessible, "child-reorder", event.accessible.childCount);
         }
         break;
+      case Ci.nsIAccessibleEvent.EVENT_VIRTUALCURSOR_CHANGED:
+        {
+          let evt = event.QueryInterface(Ci.nsIAccessibleVirtualCursorChangeEvent);
+          let vc = event.accessible.QueryInterface(Ci.nsIAccessibleDocument).virtualCursor;
+          events.emit(this, "virtualcursor-changed", {
+            old: this.getAccessiblePath(evt.oldAccessible, true),
+            new: this.getAccessiblePath(vc.position, !this.trackVirtualCursor)
+          });
+          break;
+        }
       case Ci.nsIAccessibleEvent.EVENT_HIDE:
       {
         try {
@@ -358,9 +378,9 @@ let AccessibleWalkerActor = exports.AccessibleWalkerActor = ActorClass({
     //  { eventType: eventType, accessible: accessible });
   },
 
-  ref: function(accnode) {
+  ref: function(accnode, getonly) {
     let actor = this.refMap.get(accnode);
-    if (!actor) {
+    if (!actor && !getonly) {
       actor = AccessibleActor(this, accnode);
       this.manage(actor);
       this.refMap.set(accnode, actor);
@@ -403,17 +423,23 @@ let AccessibleWalkerActor = exports.AccessibleWalkerActor = ActorClass({
     response: { root: RetVal("accessibleRoot") }
   }),
 
-  getAccessibleForDomNode: method(function(domnode) {
-    let acc = gAccRetrieval.getAccessibleFor(domnode.rawNode);
-    debug("getAccessibleForDomNode", acc);
-    if (!acc) {
-      return null;
-    }
+  setTrackVirtualCursor: method(function(track) {
+    this.trackVirtualCursor = track;
+    debug('setTrackVirtualCursor', track);
+  }, {
+    request: { domnode: Arg(0, "boolean") },
+    oneway: true
+  }),
 
+  getAccessiblePath: function(acc, getonly) {
     let ret = {
-      accessible: this.ref(acc),
+      accessible: this.ref(acc, getonly),
       path: []
     };
+
+    if (!ret.accessible) {
+      return null;
+    }
 
     let root = this.rootAccessible.rawAcc;
     for (let parent = acc.parent;
@@ -423,6 +449,12 @@ let AccessibleWalkerActor = exports.AccessibleWalkerActor = ActorClass({
     }
 
     return ret;
+  },
+
+  getAccessibleForDomNode: method(function(domnode) {
+    let acc = gAccRetrieval.getAccessibleFor(domnode.rawNode);
+    return this.getAccessiblePath(acc);
+
   }, {
     request: { domnode: Arg(0, "domnode") },
     response: { accInfo: RetVal("nullable:disconnectedAccessible") }

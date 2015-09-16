@@ -21,6 +21,7 @@ TIMESTAMP = ${shell date -u +"%Y%m%d%H%M"}
 SNAPSHOT = $(EXT_NAME)-snapshot-$(TIMESTAMP).xpi
 
 MOZRUNNER = mozrunner --pref=devtools.chrome.enabled:true --pref=devtools.debugger.remote-enabled:true \
+	--pref=xpinstall.signatures.required:false \
 	-b $(FIREFOX_BINARY) -a $(CURDIR)/additional-extensions -a $(CURDIR) --app-arg=$(URL)
 
 $(XPI_FILE): $(SOURCES)
