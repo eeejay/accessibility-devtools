@@ -4,6 +4,10 @@
   list-style: outside none none;
 }
 
+.role, .name {
+  position: relative;
+}
+
 .role {
   color: #76587A;
   font-style: italic;
@@ -23,16 +27,17 @@
 }
 
 .open-inspector {
-  background: transparent url("chrome://browser/skin/devtools/vview-open-inspector.png") no-repeat scroll 0px 0px;
+  background: transparent url("chrome://devtools/skin/images/vview-open-inspector.png") no-repeat scroll 0px 0px;
   padding-left: 16px;
   margin-left: 5px;
   cursor: pointer;
+  position: relative;
 }
 
 .open-inspector:hover {
-  background-position: -32px 0;
+  //background-position: -32px 0;
 }
 
 .open-inspector:active {
-  background-position: -16px 0;
+  //background-position: -16px 0;
 }

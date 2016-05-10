@@ -116,7 +116,11 @@ function getTargetForm(target, rootActor, isWebIde) {
 }
 
 function setupToolFront(target, url, isWebIde) {
-  let { AccessibilityToolActor, AccessibilityToolFront } = require(ACTOR_SCRIPT);
+  try {
+    var { AccessibilityToolActor, AccessibilityToolFront } = require(ACTOR_SCRIPT);
+  } catch (e) {
+    debug("Error loading actor script:", e)
+  }
   let options = {
     prefix: AccessibilityToolActor.prototype.typeName,
     constructor: "AccessibilityToolActor",
@@ -130,7 +134,11 @@ function setupToolFront(target, url, isWebIde) {
     deferred.resolve(AccessibilityToolFront(target.client, target.form));
   } else {
     target.client.listTabs(tabs => {
-      gRegistryFront = gRegistryFront || ActorRegistryFront(target.client, tabs);
+      if (!gRegistryFront) {
+        gRegistryFront =
+          target.client.getActor(tabs["actorRegistryActor"]) ||
+          ActorRegistryFront(target.client, tabs);
+      }
       gRegistryFront.registerActor(url, options).then(actorRegistrar => {
         gAccessibilityActorRegistrar = actorRegistrar;
         getTargetForm(target, tabs, isWebIde).then(result => {

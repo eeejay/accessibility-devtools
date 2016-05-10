@@ -18,7 +18,7 @@ function debug() {
   dump("accessibility-panel.js: " + Array.prototype.join.call(arguments, " ") + "\n");
 }
 
-const AccessibilityPanel = Class({
+var AccessibilityPanel = Class({
   initialize: function() {
     this._treeViewDeferred = promise.defer();
   },
@@ -64,7 +64,7 @@ const AccessibilityPanel = Class({
           treeview.setup().then(() => {
             this._treeViewDeferred.resolve(treeview);
           });
-        });
+        }).catch(e => debug('Error:', e));
       });
     }, true);
     this._treeFrame.setAttribute(

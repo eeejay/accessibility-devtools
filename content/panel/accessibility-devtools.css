@@ -8,7 +8,7 @@
   background: none;
   box-shadow: none;
   border: none;
-  list-style-image: url(chrome://browser/skin/devtools/debugger-toggleBreakpoints.png);
+  list-style-image: url(chrome://devtools/skin/images/debugger-toggleBreakpoints.svg);
   -moz-image-region: rect(0px,32px,16px,16px);
 }
 
@@ -22,18 +22,4 @@
 }
 
 #track-vc:active {
-}
-
-@media (min-resolution: 1.25dppx) {
-  #track-vc {
-    list-style-image: url(chrome://browser/skin/devtools/debugger-toggleBreakpoints@2x.png);
-    -moz-image-region: rect(0px,64px,32px,32px);
-  }
-
-  #track-vc.pressed {
-    -moz-image-region: rect(0px,32px,32px,0px);
-  }
-
-  #track-vc:active {
-  }
 }

@@ -243,7 +243,7 @@ exports.AccessibleTreeView = Class({
               width: b.width,
               height: b.height
             },
-            fill: "rgba(255,164,0,0.5);"
+            fill: "rgba(255, 204, 254, 0.66);"
           });
         });
       });
@@ -268,6 +268,12 @@ exports.AccessibleTreeView = Class({
   },
 
   highlightDomNode: function(node) {
+    // highlighting dom node messes with the a11y tree and that is confusing.
+    // disable for now..
+    return;
+  },
+
+  highlightDomNode_: function(node) {
     if (!node) {
       this.toolbox.highlighterUtils.unhighlight();
       return;
@@ -312,7 +318,7 @@ exports.AccessibleTreeView = Class({
   },
 
   selectAccessibleForDomNode: function(domnode) {
-    this.walker.getAccessibleForDomNode(domnode).then(this.selectAccessible);
+    this.walker.getAccessibleForDomNode(domnode).then(this.selectAccessible.bind(this));
   }
 
 
@@ -581,9 +587,11 @@ AccessibleNode.prototype = {
     div.appendChild(name);
 
     if (this.accessible.domNodeType == doc.ELEMENT_NODE) {
-      let domnode = doc.createElement("span");
+      let domnode = doc.createElement("a");
+      domnode.tabIndex = -1;
       domnode.setAttribute("role", "presentation"); // TODO: Expose to a11y
       domnode.className = "open-inspector";
+      domnode.title = "Inspect element"
       div.appendChild(domnode);
     }
 

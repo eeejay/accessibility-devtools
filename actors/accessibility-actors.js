@@ -9,7 +9,7 @@
 const { Cc, Ci, Cu } = require("chrome");
 const {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
 
-let protocol = require("devtools/server/protocol");
+let protocol = require("devtools/shared/protocol");
 let { Arg, method, RetVal, ActorClass, FrontClass, Front, Actor, types, preEvent } = protocol;
 let { Services } = Cu.import("resource://gre/modules/Services.jsm");
 let events = require("sdk/event/core");
@@ -72,7 +72,7 @@ if (!typesRegistered()) {
   });
 }
 
-let AccessibleRootActor = ActorClass({
+var AccessibleRootActor = ActorClass({
   typeName: "accessibleRoot",
 
   events: {
@@ -123,7 +123,7 @@ exports.AccessibleRootFront = FrontClass(AccessibleRootActor, {
   })
 });
 
-let AccessibleActor = ActorClass({
+var AccessibleActor = ActorClass({
   typeName: "accessible",
 
   events: {
@@ -290,7 +290,7 @@ exports.AccessibleFront = FrontClass(AccessibleActor, {
   _DOMNode: null
 });
 
-let AccessibleWalkerActor = exports.AccessibleWalkerActor = ActorClass({
+var AccessibleWalkerActor = exports.AccessibleWalkerActor = ActorClass({
   typeName: "accessiblewalker",
 
   events: {
@@ -478,7 +478,7 @@ exports.AccessibleWalkerFront = FrontClass(AccessibleWalkerActor, {
   }
 });
 
-let AccessibilityToolActor = exports.AccessibilityToolActor = ActorClass({
+var AccessibilityToolActor = exports.AccessibilityToolActor = ActorClass({
   typeName: "accessibilityTool",
 
   initialize: function(conn, parent) {
